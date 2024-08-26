@@ -1,15 +1,16 @@
 #!/bin/bash
 
-CONDA_ENV="/storage/work/vvm5242/testenv"
-ALPHAMSA="/storage/group/u1o/default/vvm5242/design_tools/run_alphafold-msa_2.3.1.py"
-ALPHAGPU="/storage/group/u1o/default/vvm5242/design_tools/run_alphafold-gpu_2.3.2.py"
+CONDA_ENV="<insert conda env path"
+ALPHAMSA="<insert run_alphafold-msa_2.3.1.py path>"
+ALPHAGPU="<insert run_alphafold-gpu_2.3.2.py path>"
 
-WORKINGDIR="/storage/group/u1o/default/vvm5242/240417_CDK9"
-INPUT="$WORKINGDIR/FASTA_Multimer"
+WORKINGDIR="<working directory path>"
+INPUT="<fasta file's path>"
 CPU_OUTPUT="$WORKINGDIR/CPU-SLURM"
 GPU_OUTPUT="$WORKINGDIR/GPU-SLURM"
 LOGFILE="$WORKINGDIR/job_status.log"
 CPU_JOBIDFILE="$WORKINGDIR/cpu_job_ids.txt"
+CONTAINER = "<alphafold extracted sif file, example folder is alphafold-msa_2.3.1>
 
 STRUCT="$WORKINGDIR/DESIGN-ESM"
 HEADER_CPU="#!/bin/bash\n#SBATCH --nodes=1\n#SBATCH --ntasks=4\n#SBATCH --mem=60GB\n#SBATCH --time=6:00:00\n#SBATCH --partition=open\n"
@@ -48,7 +49,7 @@ for file in *.fa; do
         echo "vmstat 1 | awk '{now=strftime(\"%Y-%m-%d %H:%M:%S \"); print now \$0}' > $LOGDIR/${JOB_NAME}_cpu_usage.log &" >> "$CPU_SLURM_SCRIPT"
         echo "vmstat_pid=\$!" >> "$CPU_SLURM_SCRIPT"
         
-        echo "time singularity run -B \"/storage/icds/RISE/sw8/alphafold/alphafold_2.3_db\" -B \"$INPUT\" -B \"/tmp\" --env CUDA_VISIBLE_DEVICES=0,NVIDIA_VISIBLE_DEVICES=0,TF_FORCE_UNIFIED_MEMORY=1,XLA_PYTHON_CLIENT_MEM_FRACTION=4.0 /storage/group/u1o/default/vvm5242/CONTAINER/alphafold-msa_2.3.1 --fasta_paths=$INPUT/$file --uniref90_database_path=/storage/icds/RISE/sw8/alphafold/alphafold_2.3_db/uniref90/uniref90.fasta --mgnify_database_path=/storage/icds/RISE/sw8/alphafold/alphafold_2.3_db/mgnify/mgy_clusters_2022_05.fa --template_mmcif_dir=/storage/icds/RISE/sw8/alphafold/alphafold_2.3_db/pdb_mmcif/mmcif_files --obsolete_pdbs_path=/storage/icds/RISE/sw8/alphafold/alphafold_2.3_db/pdb_mmcif/obsolete.dat --uniprot_database_path=/storage/icds/RISE/sw8/alphafold/alphafold_2.3_db/uniprot/uniprot.fasta --pdb_seqres_database_path=/storage/icds/RISE/sw8/alphafold/alphafold_2.3_db/pdb_seqres/pdb_seqres.txt --uniref30_database_path=/storage/icds/RISE/sw8/alphafold/alphafold_2.3_db/uniref30/UniRef30_2021_03 --bfd_database_path=/storage/icds/RISE/sw8/alphafold/alphafold_2.3_db/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt --output_dir=$STRUCT --max_template_date=2040-01-01 --db_preset=full_dbs --model_preset=multimer --use_precomputed_msas=True --logtostderr" >> "$CPU_SLURM_SCRIPT"
+        echo "time singularity run -B \"/storage/icds/RISE/sw8/alphafold/alphafold_2.3_db\" -B \"$INPUT\" -B \"/tmp\" --env CUDA_VISIBLE_DEVICES=0,NVIDIA_VISIBLE_DEVICES=0,TF_FORCE_UNIFIED_MEMORY=1,XLA_PYTHON_CLIENT_MEM_FRACTION=4.0 $CONTAINER --fasta_paths=$INPUT/$file --uniref90_database_path=/storage/icds/RISE/sw8/alphafold/alphafold_2.3_db/uniref90/uniref90.fasta --mgnify_database_path=/storage/icds/RISE/sw8/alphafold/alphafold_2.3_db/mgnify/mgy_clusters_2022_05.fa --template_mmcif_dir=/storage/icds/RISE/sw8/alphafold/alphafold_2.3_db/pdb_mmcif/mmcif_files --obsolete_pdbs_path=/storage/icds/RISE/sw8/alphafold/alphafold_2.3_db/pdb_mmcif/obsolete.dat --uniprot_database_path=/storage/icds/RISE/sw8/alphafold/alphafold_2.3_db/uniprot/uniprot.fasta --pdb_seqres_database_path=/storage/icds/RISE/sw8/alphafold/alphafold_2.3_db/pdb_seqres/pdb_seqres.txt --uniref30_database_path=/storage/icds/RISE/sw8/alphafold/alphafold_2.3_db/uniref30/UniRef30_2021_03 --bfd_database_path=/storage/icds/RISE/sw8/alphafold/alphafold_2.3_db/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt --output_dir=$STRUCT --max_template_date=2040-01-01 --db_preset=full_dbs --model_preset=multimer --use_precomputed_msas=True --logtostderr" >> "$CPU_SLURM_SCRIPT"
         
         echo "kill \$vmstat_pid" >> "$CPU_SLURM_SCRIPT"
         echo "end_time=\$(date +%s)" >> "$CPU_SLURM_SCRIPT"
