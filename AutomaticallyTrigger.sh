@@ -10,7 +10,7 @@ CPU_OUTPUT="$WORKINGDIR/CPU-SLURM"
 GPU_OUTPUT="$WORKINGDIR/GPU-SLURM"
 LOGFILE="$WORKINGDIR/job_status.log"
 CPU_JOBIDFILE="$WORKINGDIR/cpu_job_ids.txt"
-CONTAINER = "<alphafold extracted sif file, example folder is alphafold-msa_2.3.1>"
+CONTAINER="<alphafold extracted sif file, example folder is alphafold-msa_2.3.1>"
 
 STRUCT="$WORKINGDIR/DESIGN-ESM"
 HEADER_CPU="#!/bin/bash\n#SBATCH --nodes=1\n#SBATCH --ntasks=4\n#SBATCH --mem=60GB\n#SBATCH --time=6:00:00\n#SBATCH --partition=open\n"
