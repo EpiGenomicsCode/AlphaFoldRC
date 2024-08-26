@@ -1,124 +1,130 @@
 ![header](header.jpeg)
 
-# AlphafoldRC
+# AlphaFold2 Protein Structure Prediction Pipeline for ROAR via Open OnDemand
 
-This repo provides usage instructions for running DeepMind's [AlphaFold](https://github.com/deepmind/alphafold) on [Penn State's Roar Collab](https://www.icds.psu.edu/) (RC) HPC system.
+This repository contains a set of scripts and configuration files for running AlphaFold2 protein structure predictions using Penn State's ROAR high-performance computing environment via Open OnDemand.
 
-### Repo Contents
-A summary of the contents is listed below:
-* [run_alphafold-msa_2.3.1.py](run_alphafold-msa_2.3.1.py) - python runscript for the MSA phase of Alphafold
-* [run_alphafold-gpu_2.3.1.py](run_alphafold-gpu_2.3.1.py) - python runscript for the GPU inference phase of Alphafold
-* [01_submit_to_CPU-SLURM.sh](01_submit_to_CPU-SLURM.sh) - bash script to generate and submit a slurm job script for running run_alphafold-msa_2.3.1.py
-* [02_submit_to_GPU-SLURM.sh](02_submit_to_GPU-SLURM.sh) - bash script to generate and submit a slurm job script for running run_alphafold-gpu_2.3.1.py
-* [example](example) - directory containing an example case
+## Overview
 
-### Usage
-To use Alphafold on RC, no download or installation is required. Simply load the system module and run the provided scripts.
+The pipeline automates the process of running AlphaFold2 predictions for multiple protein sequences on ROAR, including:
 
-Step 1: Load the Alphafold module
+1. Sequence preparation
+2. CPU-based MSA generation
+3. GPU-based structure prediction
+4. Result analysis and visualization
+
+## Accessing ROAR via Open OnDemand
+
+1. Visit the ROAR Open OnDemand portal: https://portal.roar.psu.edu
+2. Log in with your Penn State credentials
+3. Use the dashboard to access ROAR resources and manage your jobs
+
+## Directory Structure
+
+- `example/`: Contains a test.fa file for testing the pipeline.
+- `example/OUTPUT_example_07242023`: Contains example output files. Delete this directory before running the pipeline on the test.fa file.
+
+## Key Scripts
+
+### AutomaticallyTrigger.sh
+
+This is the main script that orchestrates the entire pipeline on ROAR. It:
+
+1. Sets up the ROAR environment
+2. Submits CPU jobs for MSA generation
+3. Submits GPU jobs for structure prediction
+4. Creates a dependency tree for each cpu job and triggers the gpu jobs only on successful completion of the cpu jobs
+4. Manages job dependencies and logging
+
+### run_alphafold-msa_2.3.1.py and run_alphafold-gpu_2.3.1.py
+
+These scripts run the MSA generation and structure prediction steps of AlphaFold2 on ROAR's CPU and GPU nodes, respectively.
+
+## Generate Summary Script
+
+The `generate_summary.py` script is used to create a summary of CPU and GPU utilization during the AlphaFold2 run. It processes the log files generated during the job execution and produces a summary report.
+
+### Output
+
+The script generates a summary file named `<job_name>_utilization_summary.txt` in the log directory for each job. This file contains:
+
+- Average and maximum CPU usage
+- Average and maximum GPU usage
+- Average and maximum GPU memory usage
+
+## Environment Setup
+
+### Conda Environment
+
+1. Create a new conda environment using the provided `environment.yml` file:
+   ```
+   conda env create -f environment.yml
+   ```
+
+2. Activate the environment:
+   ```
+   conda activate myenv
+   ```
+
+3. If you need to install additional packages not included in the environment.yml, you can use:
+   ```
+   pip install -r requirements.txt
+   ```
+
+The `environment.yml` file contains all the necessary conda packages for running the AlphaFold2 pipeline. The `requirements.txt` file contains additional Python packages that sometimes are needed.
+
+### Updating the Conda Environment in AutomaticallyTrigger.sh
+
+Replace the conda environment path in the AutomaticallyTrigger.sh script:
+
 ```bash
-$ module load alphafold
+CONDA_ENV="/path/to/your/myenv"
 ```
 
-Step 2: Run the MSA phase
-```bash
-$ 01_submit_to_CPU-SLURM.sh <INPUTFILE_PATH> <OUTPUTDIR_PATH> <ALLOCATION> <MODEL>
+## Usage on ROAR via Open OnDemand
 
-INPUTFILE_PATH = path to input fasta file
-OUTPUTDIR_PATH = path to desired output directory
-ALLOCATION = the RC account/allocation you want to submit your MSA job to
-MODEL = the alphafold model you would like to you (monomer or multimer)
+1. Upload your input FASTA files to a directory on ROAR and update the `INPUT` variable in `AutomaticallyTrigger.sh` to the path of your input FASTA files.
+2. Use the ROAR OnDemand file browser to navigate to your project directory.
+3. Open a terminal session via OnDemand's "Clusters" > "ROAR Shell Access" menu.
+4. Adjust the paths and parameters in `AutomaticallyTrigger.sh` as necessary for ROAR.
+5. Submit the main job using SLURM on ROAR:
+
+```bash
+chmod +x AutomaticallyTrigger.sh
+./AutomaticallyTrigger.sh
 ```
 
-Step 3: Run the GPU Inference phase. The input options should correspond to those in step 2, accept a GPU enabled allocation should be used. This step will generate output pdb files that can be analyzed.
+8. Monitor your job status through the OnDemand dashboard. Alternatively, you can use the `squeue` command to monitor your jobs.
+
 ```bash
-$ 02_submit_to_GPU-SLURM.sh <INPUTFILE_PATH> <OUTPUTDIR_PATH> <ALLOCATION> <MODEL>
+squeue -u $USER
 ```
 
-### Example
-Follow the simple example here: [example](example)
+## Dependencies on ROAR
 
-### Customization
-The options passed to Alphafold can be modified by editing the corresponding .sh file. Supported options include:
-```bash
-$ python run_alphafold-gpu_2.3.1.py -h
-usage: run_alphafold-gpu_2.3.1.py [-h] --fasta_paths FASTA_PATHS
-                                  [--use_gpu USE_GPU]
-                                  [--gpu_devices GPU_DEVICES]
-                                  [--run_relax RUN_RELAX]
-                                  [--use_gpu_relax USE_GPU_RELAX]
-                                  [--output_dir OUTPUT_DIR]
-                                  [--data_dir DATA_DIR]
-                                  [--mount_data_dir MOUNT_DATA_DIR]
-                                  [--singularity_image_path SINGULARITY_IMAGE_PATH]
-                                  [--max_template_date MAX_TEMPLATE_DATE]
-                                  [--db_preset {full_dbs,reduced_dbs}]
-                                  [--model_preset {monomer,monomer_casp14,monomer_ptm,multimer}]
-                                  [--num_multimer_predictions_per_model NUM_MULTIMER_PREDICTIONS_PER_MODEL]
-                                  [--benchmark BENCHMARK]
-                                  [--use_precomputed_msas USE_PRECOMPUTED_MSAS]
+- Singularity/Apptainer (available on ROAR)
+- AlphaFold2 (version 2.3.1 or 2.3.2, installed on ROAR) can be installed through the sif file provided by the AlphaFold team. Visit https://cloud.sylabs.io/library/prehensilecode/alphafold_singularity/alphafold
 
-Run AlphaFold structure prediction using SIF image.
+## Output
 
-optional arguments:
-  -h, --help            show this help message and exit
-  --fasta_paths FASTA_PATHS
-                        Paths to FASTA files, each containing a prediction
-                        target that will be folded one after another. If a
-                        FASTA file contains multiple sequences, then it will
-                        be folded as a multimer. Paths should be separated by
-                        commas. All FASTA paths must have a unique basename as
-                        the basename is used to name the output directories
-                        for each prediction.
-  --use_gpu USE_GPU     Enable NVIDIA runtime to run with GPUs.
-  --gpu_devices GPU_DEVICES
-                        Comma separated list GPU identifiers to set
-                        environment variable CUDA_VISIBLE_DEVICES.
-  --run_relax RUN_RELAX
-                        Whether to do OpenMM energy minimization of each
-                        predicted structure.
-  --use_gpu_relax USE_GPU_RELAX
-                        Whether to do OpenMM energy minimization using GPU.
-  --output_dir OUTPUT_DIR
-                        Path to a directory that will store the results.
-  --data_dir DATA_DIR   Path to directory with supporting data: AlphaFold
-                        parameters and genetic and template databases. Set to
-                        the target of download_all_databases.sh.
-  --mount_data_dir MOUNT_DATA_DIR
-                        Path to directory where databases reside.
-  --singularity_image_path SINGULARITY_IMAGE_PATH
-                        Path to the AlphaFold singularity image.
-  --max_template_date MAX_TEMPLATE_DATE
-                        Maximum template release date to consider (ISO-8601
-                        format: YYYY-MM-DD). Important if folding historical
-                        test sets.
-  --db_preset {full_dbs,reduced_dbs}
-                        Choose preset MSA database configuration - smaller
-                        genetic database config (reduced_dbs) or full genetic
-                        database config (full_dbs)
-  --model_preset {monomer,monomer_casp14,monomer_ptm,multimer}
-                        Choose preset model configuration - the monomer model,
-                        the monomer model with extra ensembling, monomer model
-                        with pTM head, or multimer model
-  --num_multimer_predictions_per_model NUM_MULTIMER_PREDICTIONS_PER_MODEL
-                        How many predictions (each with a different random
-                        seed) will be generated per model. E.g. if this is 2
-                        and there are 5 models then there will be 10
-                        predictions per input. Note: this FLAG only applies if
-                        model_preset=multimer
-  --benchmark BENCHMARK
-                        Run multiple JAX model evaluations to obtain a timing
-                        that excludes the compilation time, which should be
-                        more indicative of the time required for inferencing
-                        many proteins.
-  --use_precomputed_msas USE_PRECOMPUTED_MSAS
-                        Whether to read MSAs that have been written to disk.
-                        WARNING: This will not check if the sequence, database
-                        or configuration have changed.
-```
+The pipeline generates several output directories on ROAR:
 
-### Acknowledgement
-This repository utilizes code and/or draws inspiration from the following related projects:
-* https://github.com/prehensilecode/alphafold_singularity
-* https://hpc.nih.gov/apps/alphafold2.html
-* https://github.com/deepmind/alphafold
+- `CPU-SLURM/`: Contains SLURM scripts for CPU jobs
+- `GPU-SLURM/`: Contains SLURM scripts for GPU jobs
+- `DESIGN-ESM/`: Contains AlphaFold2 output for each prediction
+- `logs/`: Contains log files for each job
+
+## Notes for ROAR Usage
+
+- This pipeline is specifically designed for use on Penn State's ROAR cluster via Open OnDemand.
+- Adjust the SLURM parameters in `AutomaticallyTrigger.sh` according to ROAR's specifications and your allocation.
+- Have a look at the key variables in `AutomaticallyTrigger.sh` and adjust them according to your project specifically, such as the `INPUT`, `CPU_OUTPUT`, `GPU_OUTPUT`, `LOGFILE`, `CPU_JOBIDFILE`, `STRUCT`, `HEADER_CPU`, `HEADER_GPU` variables.
+- Ensure that you have the necessary permissions and allocations on ROAR to run AlphaFold2 jobs.
+
+## ROAR Resources
+
+- ROAR User Guide: https://www.icds.psu.edu/computing-services/roar-user-guide/
+- ROAR OnDemand Guide: https://www.icds.psu.edu/computing-services/roar-user-guide/open-ondemand/
+- ROAR Support: https://www.icds.psu.edu/computing-services/support/
+
+
