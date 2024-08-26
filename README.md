@@ -15,7 +15,7 @@ The pipeline automates the process of running AlphaFold2 predictions for multipl
 
 ## Accessing ROAR via Open OnDemand
 
-1. Visit the ROAR Open OnDemand portal: https://portal.roar.psu.edu
+1. Visit the ROAR Open OnDemand portal: http://rcportal.hpc.psu.edu
 2. Log in with your Penn State credentials
 3. Use the dashboard to access ROAR resources and manage your jobs
 
